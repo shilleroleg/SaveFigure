@@ -7,67 +7,77 @@ function saveFig(xName, yName, varargin)
 %    
 %     'FigureName' - название файла
 %     'LineWidth' - толщина линии
-%     'FileExt' -  расширение файла tif', 'bmp', 'jpg', 'png'
+%     'FileExt' -  расширение файла 'tif', 'bmp', 'jpg', 'png'
 %     'FontSize'  - размер шрифта
 %     'YAlignment' = 'in' - подпись по У внутри осей
 %                  = 'out' - подпись по У вне осей 
 %     'XAlignment' = 'in' - подпись по X внутри осей
 %                  = 'out' - подпись по X вне осей 
 %
-% ver. 2
-% Значения по умолчанию
+% Пример вызова:
+% 			saveFig('t, c',  'U,кВ',   'FigureName', 'Figure_1',...
+%					  'LineWidth', 2, 'FontSize', 18,...
+%					  'FileExt','tif',...
+%					  'YAlignment', 'out',  'XAlignment', 'out');
+%
+% ver. 3.2
+%
+%% Значения по умолчанию
 figureName = 'Figure';
 nLineWidth = 2;
 nFontSize = 24; 
 fExt = 'bmp';
+YAlignment = 'out';
+XAlignment = 'out';
 YVerticalAlignment = 'top';
-YHorizontalAlignment = 'right';
-XVerticalAlignment = 'top';
 XHorizontalAlignment = 'right';
-% error(nargchk(2, 3, nargin))
-
-if length(varargin) > 1
-    if rem(length(varargin), 2) ~= 0
-        disp('Неверное количество аргументов');
-        return
+% Парсим командную строку
+p = inputParser;
+% Обязательные параметры
+addRequired(p,'xName');
+addRequired(p,'yName');
+% Необязательные параметры
+addOptional(p,'FigureName', figureName);
+addOptional(p,'LineWidth', nLineWidth, @isnumeric);
+addOptional(p,'FontSize', nFontSize, @isnumeric);
+checkExt = @(s1) any(strcmp(s1,{'tif','tiff','bmp','jpg','png'}));
+addOptional(p,'FileExt', fExt, checkExt);
+checkYAlignment = @(s2) any(strcmp(s2,{'in','out'}));
+addOptional(p,'YAlignment', YAlignment, checkYAlignment);
+checkXAlignment = @(s3) any(strcmp(s3,{'in','out'}));
+addOptional(p,'XAlignment', XAlignment, checkXAlignment);
+%% Получаем валидные параметры командной строки
+parse(p, xName, yName, varargin{:});
+xName = p.Results.xName;
+yName = p.Results.yName;
+figureName = p.Results.FigureName;
+nLineWidth = p.Results.LineWidth;
+nFontSize = p.Results.FontSize;
+fExt = p.Results.FileExt;
+    if strcmp(fExt, 'tiff')
+        fExt = 'tif'; 
     end
-    
-    for i = 1:2:length(varargin)
-        switch char(varargin(i))
-            case 'FigureName'
-                figureName = char(varargin(i+1));
-            case 'LineWidth'
-                nLineWidth = cell2mat(varargin(i+1));
-            case 'FileExt'
-                fExt = char(varargin(i+1));
-            case 'FontSize'
-                nFontSize = cell2mat(varargin(i+1));
-            case 'YAlignment'
-                if strcmp(char(varargin(i+1)), 'in')
-                    YHorizontalAlignment = 'left';
-                elseif strcmp(char(varargin(i+1)), 'out')
-                    YHorizontalAlignment = 'right';
-                end
-             case 'XAlignment'
-                if strcmp(char(varargin(i+1)), 'in')
-                    XVerticalAlignment = 'bottom';
-                elseif strcmp(char(varargin(i+1)), 'out')
-                    XVerticalAlignment = 'top';
-                end   
-            otherwise
-                disp('Неизвестный аргумент')
-        end   
+YAlignment = p.Results.YAlignment;
+    if strcmp(YAlignment, 'in')
+        YHorizontalAlignment = 'left';
+    elseif strcmp(YAlignment, 'out')
+        YHorizontalAlignment = 'right';
+        YVerticalAlignment = 'middle';
     end
-    
-end 
-% Включаем сетку
+XAlignment = p.Results.XAlignment;
+    if strcmp(XAlignment, 'in')
+        XVerticalAlignment = 'bottom';
+    elseif strcmp(XAlignment, 'out')
+        XVerticalAlignment = 'top';
+    end
+%% Включаем сетку
 grid on;               
 % Устанавливаем размер шрифта и толщину линий
 figProp = get(gca);    % Получаем все свойства графика
 set(gca, 'FontName', 'Times New Roman', 'FontSize', nFontSize);
 set(figProp.Children, 'LineWidth', nLineWidth);
 
-figProp = get(gca);    % Получаем все свойства графика еще раз 
+% figProp = get(gca);    % Получаем все свойства графика еще раз 
 nXLim = figProp.XLim;  % Пределы по оси Х
 nYLim = figProp.YLim;  % Пределы по оси У
 
@@ -94,6 +104,9 @@ text(nXLim(1),nYLim(2), yName, ...
     'VerticalAlignment', YVerticalAlignment,...
     'FontName', 'Times New Roman',...
     'FontSize', nFontSize);
+
+
+% F = getframe(gcf);
 
 %% Сохраняем рисунок с графиком
 if exist([figureName '.' fExt], 'file')
