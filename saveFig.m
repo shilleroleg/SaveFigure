@@ -1,39 +1,65 @@
-function saveFig2(yName, xName, figureName, nLineWidth, fExt)
+function saveFig(xName, yName, varargin)
 % Функция настраивает график функции и сохраняет в файл
 % 
 % Аргументы:
-%    yName - обязательный аргумент - подпись оси У 
-%    xName - необязательный аргумент - подпись оси Х
-%            по умолчанию 't, c' 
-%    figureName - необязательный аргумент - название сохраняемого файла
-%                 по умолчанию Figure-(и текущее время)
-%    nLineWidth - необязательный аргумент - толщина линий
-%                 по умолчанию толщина 2   
-%    fExt - необязательный аргумент - расширение сохраняемогофайла
-%           по умолчанию 'bmp'
-%           допустимые значения 'tif', 'bmp', 'jpg', 'png'
+%     xName - подпись оси Х
+%     yName - подпись оси У 
+%    
+%     'FigureName' - название файла
+%     'LineWidth' - толщина линии
+%     'FileExt' -  расширение файла tif', 'bmp', 'jpg', 'png'
+%     'FontSize'  - размер шрифта
+%     'YAlignment' = 'in' - подпись по У внутри осей
+%                  = 'out' - подпись по У вне осей 
+%     'XAlignment' = 'in' - подпись по X внутри осей
+%                  = 'out' - подпись по X вне осей 
 %
-% ver. 1
+% ver. 2
+% Значения по умолчанию
+figureName = 'Figure';
+nLineWidth = 2;
+nFontSize = 24; 
+fExt = 'bmp';
+YVerticalAlignment = 'top';
+YHorizontalAlignment = 'right';
+XVerticalAlignment = 'top';
+XHorizontalAlignment = 'right';
+% error(nargchk(2, 3, nargin))
 
-if nargin == 1
-    xName = 't, c';       % Подпись оси Х по умолчанию
-end
-
-if nargin <= 2            % Название графика по умолчанию
-    c = clock;
-    figureName = ['Figure-' num2str(c(4)) '-' num2str(c(5)) '-' num2str(round(c(6)))];      
-end
-
-if nargin <= 3
-    nLineWidth = 2;       % Толщина линий по умолчанию
-end
-
-if nargin <= 4
-    fExt = 'bmp';         % Расширение файла по умолчанию
-end
-
-nFontSize = 24;         % Размер шрифта для подписей
-
+if length(varargin) > 1
+    if rem(length(varargin), 2) ~= 0
+        disp('Неверное количество аргументов');
+        return
+    end
+    
+    for i = 1:2:length(varargin)
+        switch char(varargin(i))
+            case 'FigureName'
+                figureName = char(varargin(i+1));
+            case 'LineWidth'
+                nLineWidth = cell2mat(varargin(i+1));
+            case 'FileExt'
+                fExt = char(varargin(i+1));
+            case 'FontSize'
+                nFontSize = cell2mat(varargin(i+1));
+            case 'YAlignment'
+                if strcmp(char(varargin(i+1)), 'in')
+                    YHorizontalAlignment = 'left';
+                elseif strcmp(char(varargin(i+1)), 'out')
+                    YHorizontalAlignment = 'right';
+                end
+             case 'XAlignment'
+                if strcmp(char(varargin(i+1)), 'in')
+                    XVerticalAlignment = 'bottom';
+                elseif strcmp(char(varargin(i+1)), 'out')
+                    XVerticalAlignment = 'top';
+                end   
+            otherwise
+                disp('Неизвестный аргумент')
+        end   
+    end
+    
+end 
 % Включаем сетку
 grid on;               
 % Устанавливаем размер шрифта и толщину линий
@@ -44,21 +70,28 @@ set(figProp.Children, 'LineWidth', nLineWidth);
 figProp = get(gca);    % Получаем все свойства графика еще раз 
 nXLim = figProp.XLim;  % Пределы по оси Х
 nYLim = figProp.YLim;  % Пределы по оси У
+
 %% Ось Х
+% Подпись по оси X без последнего элемента
+if strcmp(XVerticalAlignment, 'top')
+    set(gca,'XTick', figProp.XTick(1:end-1));
+end
 %Подпись оси Х
 text(nXLim(2),nYLim(1), xName, ...
-    'HorizontalAlignment', 'right',...
-    'VerticalAlignment', 'bottom',...
+    'HorizontalAlignment', XHorizontalAlignment,...
+    'VerticalAlignment', XVerticalAlignment,...
     'FontName', 'Times New Roman',...
     'FontSize', nFontSize);
 
 %% Ось Y
-% Предел по оси Y
-% set(gca,'YLim', nYLim+nYLim/10);
+% Подпись по оси Y без последнего элемента
+if strcmp(YHorizontalAlignment, 'right')
+    set(gca,'YTick', figProp.YTick(1:end-1));
+end
 %Подпись оси Y
 text(nXLim(1),nYLim(2), yName, ...
-    'HorizontalAlignment', 'left',...
-    'VerticalAlignment', 'bottom',...
+    'HorizontalAlignment', YHorizontalAlignment,...
+    'VerticalAlignment', YVerticalAlignment,...
     'FontName', 'Times New Roman',...
     'FontSize', nFontSize);
 
